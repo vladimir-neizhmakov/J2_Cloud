@@ -6,6 +6,9 @@ import network.ServerSocketThreadListener;
 import network.SocketThread;
 import network.SocketThreadListener;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
@@ -126,6 +129,17 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             case Library.TYPE_BCAST_CLIENT:
                 sendToAllAuthorizedClients(Library.getTypeBroadcast(
                         client.getNickname(), arr[1]));
+                break;
+            case Library.TYPE_FILE_CLIENT:
+                try {
+                    FileOutputStream toFile = new FileOutputStream("log_copy.txt",true);
+                    toFile.write(Integer.parseInt(arr[1]));
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 break;
             default:
                 client.sendMessage(Library.getMsgFormatError(msg));

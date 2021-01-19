@@ -8,17 +8,20 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
 public class ClientGUI extends JFrame implements ActionListener, Thread.UncaughtExceptionHandler, SocketThreadListener {
 
-    private static final int WIDTH = 400;
-    private static final int HEIGHT = 300;
+    private static final int WIDTH = 500;
+    private static final int HEIGHT = 400;
 
     private final JTextArea log = new JTextArea();
     private final JPanel panelTop = new JPanel(new GridLayout(2, 3));
@@ -32,7 +35,8 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
     private final JPanel panelBottom = new JPanel(new BorderLayout());
     private final JButton btnDisconnect = new JButton("<html><b>Disconnect</b></html>");
     private final JTextField tfMessage = new JTextField();
-    private final JButton btnSend = new JButton("Send");
+    private final JButton btnSend = new JButton("SendMsg");
+    private final JButton btnSendFile = new JButton("SendFile(LogToServer)");
 
     private final JList<String> userList = new JList<>();
     private boolean shownIoErrors = false;
@@ -69,6 +73,7 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         cbAlwaysOnTop.addActionListener(this);
         tfMessage.addActionListener(this);
         btnSend.addActionListener(this);
+        btnSendFile.addActionListener(this);
         btnLogin.addActionListener(this);
         btnDisconnect.addActionListener(this);
 
@@ -81,6 +86,7 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         panelBottom.add(btnDisconnect, BorderLayout.WEST);
         panelBottom.add(tfMessage, BorderLayout.CENTER);
         panelBottom.add(btnSend, BorderLayout.EAST);
+        panelBottom.add(btnSendFile, BorderLayout.AFTER_LAST_LINE);
         panelBottom.setVisible(false);
 
         add(scrUser, BorderLayout.EAST);
@@ -97,6 +103,8 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
             setAlwaysOnTop(cbAlwaysOnTop.isSelected());
         } else if (src == btnSend || src == tfMessage) {
             sendMessage();
+        } else if (src == btnSendFile) {
+            sendFile();
         } else if (src == btnLogin) {
             connect();
         } else if (src == btnDisconnect) {
@@ -123,7 +131,25 @@ public class ClientGUI extends JFrame implements ActionListener, Thread.Uncaught
         tfMessage.requestFocusInWindow();
         socketThread.sendMessage(Library.getTypeBcastClient(msg));
         //putLog(String.format("%s: %s", username, msg));
-        //wrtMsgToLogFile(msg, username);
+        wrtMsgToLogFile(msg, username);
+    }
+
+    private void sendFile() {
+        String msg = Paths.get("log.txt").toString();
+        try {
+            int r=0;
+            FileInputStream fromFile = new FileInputStream(msg);
+            while (r!=-1){
+                try {
+                    r=fromFile.read();
+                    socketThread.sendMessage(Library.getTypeFileClient(String.valueOf(r)));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     private void wrtMsgToLogFile(String msg, String username) {
